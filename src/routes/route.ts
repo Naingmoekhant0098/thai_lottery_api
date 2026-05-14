@@ -1,0 +1,17 @@
+import { Router } from "express";
+import { userRouter } from "../modules/user";
+import { notificationRouter } from "../modules/notification";
+import { authRouter } from "../modules/auth";
+import { ticketRouter } from "../modules/ticket";
+import { customerRouter } from "../modules/customer";
+import { lotteryDrawRouter } from "../modules/lottery_draw";
+import { OrderRouter } from "../modules/order";
+const router = Router();
+router.use("/users", userRouter);
+router.use("/auth", authRouter);
+router.use("/notifications", notificationRouter);
+router.use("/tickets", ticketRouter);
+router.use("/customers", customerRouter);
+router.use("/lottery-draws", lotteryDrawRouter);
+router.use("/orders", OrderRouter);
+export default router;

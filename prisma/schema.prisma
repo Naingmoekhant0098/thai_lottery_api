@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  password  String
+  role      String   @default("Admin")
+  createdAt DateTime @default(now())
+}
+
+model Customer {
+  id             String           @id @default(uuid())
+  name           String
+  phone          String           @unique
+  address        String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  lotteryDraws   LotteryDraw[]
+  WinningTickets WinningTickets[]
+  Order          Order[]
+}
+
+model LotteryDraw {
+  id         String     @id @default(uuid())
+  externalId String?    @unique
+  drawDate   DateTime   @unique
+  isClosed   Boolean    @default(false)
+  results    Json?
+  tickets    Ticket[]
+  status     DrawStatus @default(UPCOMING)
+  expireDate DateTime
+  createdAt  DateTime   @default(now())
+  Customer   Customer?  @relation(fields: [customerId], references: [id])
+  customerId String?
+}
+
+model Ticket {
+  id           String                @id @default(uuid())
+  ticketNumber String                @unique
+  firstThree   String
+  lastThree    String
+  lastTwo      String
+  amount       Int
+  status       TicketStatus          @default(PENDING)
+  isSold       Boolean @default(false)
+
+  // Relation
+  drawId String
+  draw   LotteryDraw @relation(fields: [drawId], references: [id])
+
+  // Changed this: relation to Order instead of direct User/Customer
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  prizeWon       String?
+  rewardAmount   Int?
+  expireDate     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  WinningTickets WinningTickets?
+
+  @@index([ticketNumber])
+  @@index([lastTwo])
+  @@index([orderId])
+}
+
+model WinningTickets {
+  id          String    @id @default(uuid())
+  ticketId    String    @unique
+  ticket      Ticket    @relation(fields: [ticketId], references: [id])
+  prizeName   String
+  prizeAmount Int
+  isClaimed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  Customer    Customer? @relation(fields: [customerId], references: [id])
+  customerId  String?
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique // e.g., "ORD-1001"
+  totalAmount Int // Sum of all ticket amounts
+  status      OrderStatus @default(PENDING)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  tickets    Ticket[] // One order can have many tickets
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([customerId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum TicketType {
+  SIX_DIGIT
+  THREE_DIGIT
+  TWO_DIGIT
+}
+
+enum DrawStatus {
+  UPCOMING
+  PENDING_RESULT
+  FINISHED
+}
+
+enum TicketStatus {
+  PENDING
+  WON
+  LOST
+  EXPIRED
+}
+
+enum TicketAvailableStatus {
+  SOLD
+  AVAILABLE
+}
